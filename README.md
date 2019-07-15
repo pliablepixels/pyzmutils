@@ -2,6 +2,10 @@
 
 Python utilities for ZoneMinder projects
 
+### Limitations
+* Only for Python3
+* Basic support for now
+
 Current modules:
 * Logger
 
