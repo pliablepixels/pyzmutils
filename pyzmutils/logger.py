@@ -173,13 +173,14 @@ class ZMLogger:
         log_string = '{level} [{pname}] [{msg}]'.format(level=level, pname=self.process_name, msg=msg)
         return (log_string)
     
-    def log(self,level, message):
+    def log(self,level, message, caller):
         # first stack element will be the wrapper log function
         # second stack element will be the actual calling function
         #print (len(stack()))
-        idx = min(len(stack()), 2) #incase someone calls this directly
-        caller = getframeinfo(stack()[idx][0])
-        #print ('Called from {}:{}'.format(caller.filename, caller.lineno))
+        if not caller:
+            idx = min(len(stack()), 2) #incase someone calls this directly
+            caller = getframeinfo(stack()[idx][0])
+            #print ('Called from {}:{}'.format(caller.filename, caller.lineno))
 
         # write to syslog
         if self.levels[level] <= self.config['log_level_syslog']:
@@ -203,7 +204,7 @@ class ZMLogger:
             line = caller.lineno
 
             try:
-                cmd = self.log_table.insert().values(TimeKey=time.time(), Component=component, ServerId=serverid, Pid=pid, Level=l, Code=code, Message=message,File=caller.filename, Line=line)
+                cmd = self.log_table.insert().values(TimeKey=time.time(), Component=component, ServerId=serverid, Pid=pid, Level=l, Code=code, Message=message,File=os.path.split(caller.filename)[1], Line=line)
                 self.conn.execute(cmd)
             except SQLAlchemyError as e:
                 self.connected = False
@@ -213,40 +214,37 @@ class ZMLogger:
         if self.levels[level] <= self.config['log_level_file']:
             timestamp = datetime.datetime.now().strftime('%x %H:%M:%S')
            # 07/15/19 10:10:14.050651 zmc_m8[4128].INF-zm_monitor.cpp/2516 [Driveway: images:218900 - Capturing at 3.70 fps, capturing bandwidth 98350bytes/sec]
-            idx = min(len(stack()), 2) #incase someone calls this directly
-            
-            caller = getframeinfo(stack()[idx][0])
-            fnfl ='{}:{}'.format(caller.filename, caller.lineno)
+            fnfl ='{}:{}'.format(os.path.split(caller.filename)[1], caller.lineno)
             log_string = '{timestamp} {pname}[{pid}] {level} {fnfl} [{msg}]\n'.format(timestamp=timestamp, level=level, pname=self.process_name, pid=self.pid, msg=message, fnfl=fnfl)
             if self.log_fhandle: self.log_fhandle.write(log_string)
 
-    def Info(self,message):
-        self.log('INF',message)
+    def Info(self,message,caller=None):
+        self.log('INF',message,caller)
 
-    def Debug(self, level, message):
+    def Debug(self, level, message,caller=None):
         target = self.config['log_debug_target']
         if target:
-            targets = [x.strip() for x in target.split(target)]
+            targets = [x.strip().lstrip('_') for x in target.split('|')]
             # if current name does not fall into debug targets don't log
             if not any(map(self.process_name.startswith, targets)):
                 return
 
         if self.config['log_debug'] and level <= self.config['log_level_debug']:
-            self.log('DBG', message)
+            self.log('DBG', message,caller)
 
-    def Warning(self,message):
-        self.log('WAR',message)
+    def Warning(self,message,caller=None):
+        self.log('WAR',message,caller)
 
-    def Error(self,message):
-        self.log('ERR',message)
+    def Error(self,message,caller=None):
+        self.log('ERR',message,caller)
      
-    def Fatal(self,message):
-        self.log('FAT',message)
+    def Fatal(self,message,caller=None):
+        self.log('FAT',message,caller)
         self.close()
         exit(-1)
 
-    def Panic(self,message):
-        self.log('PNC',message)
+    def Panic(self,message,caller=None):
+        self.log('PNC',message,caller)
         self.close()
         exit(-1)
 
