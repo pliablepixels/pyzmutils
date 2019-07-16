@@ -38,7 +38,6 @@ class ZMLogger:
      }
 
     def __init__(self, name=None, conf='/etc/zm'):
-       
         self.pid =  os.getpid()
         self.process_name = name or psutil.Process(self.pid).name()
         syslog.openlog(logoption=syslog.LOG_PID)
@@ -67,7 +66,7 @@ class ZMLogger:
             files.append(f)
         files.sort()
         files.insert(0,conf+'/zm.conf')
-        config_file = configparser.ConfigParser()
+        config_file = configparser.ConfigParser(interpolation=None)
         for f in files:
             with open(f) as s:
                 #print ('reading {}'.format(f))

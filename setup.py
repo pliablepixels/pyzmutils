@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import io
 import os
@@ -19,7 +19,7 @@ INSTALL_REQUIRES=['psutil', 'SQLAlchemy', 'PyMySQL']
 
 here = os.path.abspath(os.path.dirname(__file__))
 # read the contents of your README file
-with open(path.join(here, 'README.md'), encoding='utf-8') as f:
+with open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 def read(*parts):
@@ -37,7 +37,6 @@ setup(name = NAME,
       version = find_version('pyzmutils','__init__.py'),
       description = DESCRIPTION,
       long_description = long_description,
-      long_description=long_description,
       long_description_content_type='text/markdown',
       author = AUTHOR,
       author_email = AUTHOR_EMAIL,

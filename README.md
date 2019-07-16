@@ -15,6 +15,10 @@ Current modules:
 import pyzmutils.logger as zmlog
 
 logger = zmlog.ZMLogger()
+# You can also specify a module name and a conf path manually
+# if you don'y specify a module name, then the process name is taken
+# logger = zmlog.ZMLogger(name='mymodule', conf='/etc/zm')
+
 logger.Warning('This is a Warning')
 logger.Info('This is an Info')
 logger.Debug(1,'This is a Debug 1')
