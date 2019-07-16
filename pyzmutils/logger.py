@@ -216,7 +216,9 @@ class ZMLogger:
            # 07/15/19 10:10:14.050651 zmc_m8[4128].INF-zm_monitor.cpp/2516 [Driveway: images:218900 - Capturing at 3.70 fps, capturing bandwidth 98350bytes/sec]
             fnfl ='{}:{}'.format(os.path.split(caller.filename)[1], caller.lineno)
             log_string = '{timestamp} {pname}[{pid}] {level} {fnfl} [{msg}]\n'.format(timestamp=timestamp, level=level, pname=self.process_name, pid=self.pid, msg=message, fnfl=fnfl)
-            if self.log_fhandle: self.log_fhandle.write(log_string)
+            if self.log_fhandle: 
+                self.log_fhandle.write(log_string)
+                self.log_fhandle.flush()
 
     def Info(self,message,caller=None):
         self.log('INF',message,caller)
