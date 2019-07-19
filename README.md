@@ -70,18 +70,19 @@ you'd do:
 
 ```python
 
- overrides = {
+overrides = {
     'log_level_db': -5, # -5 is 'OFF' in ZM
     'log_level_syslog': 1, # 1 is 'DBG' in ZM
     'log_level_debug': 3,
     'log_debug_target': 'myapp'
     }
-    logger = ZMLogger(name='myapp', overrides=overrides)
-    print (logger.get_config())
-    logger.Warning('This is a Warning')
-    logger.Info('This is an Info')
-    logger.Debug(1,'This is a Debug 1')
-    logger.Debug(3,'This is a Debug 3')
-    #logger.Fatal('This is a Fatal message, and we will quit')
-    logger.close()
+logger = ZMLogger(name='myapp', overrides=overrides)
+print (logger.get_config())
+logger.Warning('This is a Warning')
+logger.Info('This is an Info')
+logger.Debug(1,'This is a Debug 1')
+logger.Debug(3,'This is a Debug 3')
+#logger.Fatal('This is a Fatal message, and we will quit')
+logger.close()
+
 ```
