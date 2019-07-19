@@ -58,7 +58,7 @@ class ZMLogger:
             'log_debug_target' : None,
             'log_debug_file' :None,
             'server_id': None,
-            'driver': 'mysql+mysqlconnector'
+            'driver': 'mysql+mysqldb'
         }
 
         # read all config files in order
