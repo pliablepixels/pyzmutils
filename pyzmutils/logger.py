@@ -57,7 +57,8 @@ class ZMLogger:
             'log_level_debug' : None,
             'log_debug_target' : None,
             'log_debug_file' :None,
-            'server_id': None
+            'server_id': None,
+            'driver': 'mysql+mysqlconnector'
         }
 
         # read all config files in order
@@ -84,12 +85,12 @@ class ZMLogger:
         self.config['logpath'] =  config_file['zm_root']['ZM_PATH_LOGS']
 
 
-        self.cstr = 'mysql+pymysql://{}:{}@{}/{}'.format(self.config['user'],
+        self.cstr = self.config['driver']+'://{}:{}@{}/{}'.format(self.config['user'],
             self.config['password'],self.config['host'],self.config['dbname'])
 
         try:
-            engine = create_engine(self.cstr, pool_recycle=3600)
-            self.conn = engine.connect()
+            self.engine = create_engine(self.cstr, pool_recycle=3600)
+            self.conn = self.engine.connect()
             self.connected = True
         except SQLAlchemyError as e:
             self.connected = False
@@ -97,7 +98,7 @@ class ZMLogger:
         
         #self.inspector = inspect(engine)
         #print(self.inspector.get_columns('Config'))
-        meta = MetaData(engine,reflect=True)
+        meta = MetaData(self.engine,reflect=True)
         self.config_table = meta.tables['Config']
         self.log_table = meta.tables['Logs']
 
@@ -145,11 +146,11 @@ class ZMLogger:
             pass
 
         try:
-            engine = create_engine(self.cstr, pool_recycle=3600)
-            self.conn = engine.connect()
+            self.engine = create_engine(self.cstr, pool_recycle=3600)
+            self.conn = self.engine.connect()
             #self.inspector = inspect(engine)
             #print(self.inspector.get_columns('Config'))
-            meta = MetaData(engine,reflect=True)
+            meta = MetaData(self.engine,reflect=True)
             self.config_table = meta.tables['Config']
             self.log_table = meta.tables['Logs']
             message = 'reconnecting to Database...'
@@ -166,6 +167,7 @@ class ZMLogger:
 
     def close(self):
         self.conn.close()
+        self.engine.dispose()
         syslog.closelog()
         if (self.log_fhandle): self.log_fhandle.close()
 
@@ -257,6 +259,5 @@ if __name__=='__main__':
     logger.Debug(1,'This is a Debug 1')
     logger.Debug(3,'This is a Debug 3')
     #logger.Fatal('This is a Fatal message, and we will quit')
-
     logger.close()
 
