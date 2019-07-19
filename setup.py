@@ -34,6 +34,7 @@ def find_version(*file_paths):
     raise RuntimeError("Unable to find version string.")
 
 setup(name = NAME,
+      python_requires='>=3.0.0',
       version = find_version('pyzmutils','__init__.py'),
       description = DESCRIPTION,
       long_description = long_description,

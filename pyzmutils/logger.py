@@ -37,12 +37,13 @@ class ZMLogger:
          'PNC':syslog.LOG_ERR
      }
 
-    def __init__(self, name=None, conf='/etc/zm'):
+    def __init__(self, name=None, overrides={}):
         self.pid =  os.getpid()
         self.process_name = name or psutil.Process(self.pid).name()
         syslog.openlog(logoption=syslog.LOG_PID)
 
         self.config = {
+            'conf_path': '/etc/zm',
             'user' : None,
             'password' : None,
             'host' : None,
@@ -61,12 +62,19 @@ class ZMLogger:
             'driver': 'mysql+mysqldb'
         }
 
+        # Round 1 of overrides, before we read params from DB
+         # Override with locals if present
+        for key in self.config:
+           if key in overrides:
+               self.config[key] = overrides[key]
+        
+
         # read all config files in order
         files=[]
-        for f in glob.glob(conf+'/conf.d/*.conf'):
+        for f in glob.glob(self.config['conf_path']+'/conf.d/*.conf'):
             files.append(f)
         files.sort()
-        files.insert(0,conf+'/zm.conf')
+        files.insert(0,self.config['conf_path']+'/zm.conf')
         config_file = configparser.ConfigParser(interpolation=None)
         for f in files:
             with open(f) as s:
@@ -83,7 +91,6 @@ class ZMLogger:
         self.config['host'] = conf_data.get('ZM_DB_HOST', 'localhost')
         self.config['dbname'] = conf_data.get('ZM_DB_NAME', 'zm')
         self.config['logpath'] =  config_file['zm_root']['ZM_PATH_LOGS']
-
 
         self.cstr = self.config['driver']+'://{}:{}@{}/{}'.format(self.config['user'],
             self.config['password'],self.config['host'],self.config['dbname'])
@@ -115,7 +122,7 @@ class ZMLogger:
         resultproxy = self.conn.execute(select_st)
         db_vals = {row[0]:row[1] for row in resultproxy}
 
-        self.config['log_level_syslog'] = int(db_vals['ZM_LOG_LEVEL_SYSLOG'])
+        self.config['log_level_syslog'] = int(db_vals['ZM_LOG_LEVEL_SYSLOG']) 
         self.config['log_level_file'] = int(db_vals['ZM_LOG_LEVEL_FILE'])
         self.config['log_level_db'] = int(db_vals['ZM_LOG_LEVEL_DATABASE'])
         self.config['log_debug'] = int(db_vals['ZM_LOG_DEBUG'])
@@ -123,9 +130,18 @@ class ZMLogger:
         self.config['log_debug_file'] = db_vals['ZM_LOG_DEBUG_FILE']
         self.config['log_debug_target'] = db_vals['ZM_LOG_DEBUG_TARGET']
         self.config['server_id'] = db_vals.get('ZM_SERVER_ID',0)
-
+        # Round 2 of overrides, after DB data is read
+        # Override with locals if present
+        for key in self.config:
+           if key in overrides:
+               self.config[key] = overrides[key]
         
+        
+        self.log_fname = None
+        self.log_fhandle = None
+
         if self.config['log_level_file'] > self.levels['OFF']:
+            
             n = os.path.split(self.process_name)[1].split('.')[0]
             self.log_fname = self.config['logpath']+'/'+n+'.log' 
             try:
@@ -138,6 +154,9 @@ class ZMLogger:
                 self.log_fhandle = None
                 
         #print (self.config)
+
+    def get_config(self):
+        return self.config
 
     def reconnect(self):
         try:
@@ -253,7 +272,10 @@ class ZMLogger:
         exit(-1)
 
 if __name__=='__main__':
-    logger = ZMLogger()
+    overrides = {
+    }
+    logger = ZMLogger(name='myapp', overrides=overrides)
+    print (logger.get_config())
     logger.Warning('This is a Warning')
     logger.Info('This is an Info')
     logger.Debug(1,'This is a Debug 1')
