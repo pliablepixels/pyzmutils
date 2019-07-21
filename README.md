@@ -61,7 +61,7 @@ Basically, overrides will override values this module retrieves from the conf of
   'log_debug_target' : None,
   'log_debug_file' :None,
   'server_id': None,
-  'driver': 'mysql+mysqldb'
+  'driver': 'mysql+mysqlconnector'
 ```
 
 So for example, let's suppose ZM has DB logging enabled, but you want to turn it off for this model. Also, ZM uses syslog as INFO but you want DEBUG3 for this module:
