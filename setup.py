@@ -14,7 +14,7 @@ URL = 'https://github.com/pliablepixels/pyzmutils/'
 AUTHOR_EMAIL = 'pliablepixels@gmail.com'
 AUTHOR = 'Pliable Pixels'
 LICENSE = 'GPL'
-INSTALL_REQUIRES=['psutil', 'SQLAlchemy', 'mysqlclient']
+INSTALL_REQUIRES=['psutil', 'SQLAlchemy', 'mysql-connector-python']
 
 
 here = os.path.abspath(os.path.dirname(__file__))

@@ -47,19 +47,19 @@ class ZMLogger:
             'user' : None,
             'password' : None,
             'host' : None,
-            'webuser': None,
-            'webgroup': None,
+            'webuser': 'www-data',
+            'webgroup': 'www-data',
             'dbname' : None,
-            'logpath' : None,
-            'log_level_syslog' : None,
-            'log_level_file' : None,
-            'log_level_db' : None,
-            'log_debug' : None,
-            'log_level_debug' : None,
-            'log_debug_target' : None,
-            'log_debug_file' :None,
-            'server_id': None,
-            'driver': 'mysql+mysqldb'
+            'logpath' : '/var/log',
+            'log_level_syslog' : 0,
+            'log_level_file' : 0,
+            'log_level_db' : 0,
+            'log_debug' : 0,
+            'log_level_debug' : 1,
+            'log_debug_target' : '',
+            'log_debug_file' :'',
+            'server_id': 0,
+            'driver': 'mysql+mysqlconnector'
         }
 
         # Round 1 of overrides, before we read params from DB
@@ -101,35 +101,39 @@ class ZMLogger:
             self.connected = True
         except SQLAlchemyError as e:
             self.connected = False
-            syslog.syslog (syslog.LOG_ERR, self.format_string("Error connecting to DB:" + str(e)))
-        
-        #self.inspector = inspect(engine)
-        #print(self.inspector.get_columns('Config'))
-        meta = MetaData(self.engine,reflect=True)
-        self.config_table = meta.tables['Config']
-        self.log_table = meta.tables['Logs']
+            self.conn = None
+            self.engine = None
+            syslog.syslog (syslog.LOG_ERR, self.format_string("Turning DB logging off. Could not connect to DB, message was:" + str(e)))
+            self.config['log_level_db'] = self.levels['OFF']
+           
+            
+      
+        else:
+            meta = MetaData(self.engine,reflect=True)
+            self.config_table = meta.tables['Config']
+            self.log_table = meta.tables['Logs']
 
-        select_st = select([self.config_table.c.Name, self.config_table.c.Value]).where(
-                or_(self.config_table.c.Name=='ZM_LOG_LEVEL_SYSLOG',
-                    self.config_table.c.Name=='ZM_LOG_LEVEL_FILE',
-                    self.config_table.c.Name=='ZM_LOG_LEVEL_DATABASE',
-                    self.config_table.c.Name=='ZM_LOG_DEBUG',
-                    self.config_table.c.Name=='ZM_LOG_DEBUG_LEVEL',
-                    self.config_table.c.Name=='ZM_LOG_DEBUG_FILE',
-                    self.config_table.c.Name=='ZM_LOG_DEBUG_TARGET',
-                    self.config_table.c.Name=='ZM_SERVER_ID',
-                     ))
-        resultproxy = self.conn.execute(select_st)
-        db_vals = {row[0]:row[1] for row in resultproxy}
+            select_st = select([self.config_table.c.Name, self.config_table.c.Value]).where(
+                    or_(self.config_table.c.Name=='ZM_LOG_LEVEL_SYSLOG',
+                        self.config_table.c.Name=='ZM_LOG_LEVEL_FILE',
+                        self.config_table.c.Name=='ZM_LOG_LEVEL_DATABASE',
+                        self.config_table.c.Name=='ZM_LOG_DEBUG',
+                        self.config_table.c.Name=='ZM_LOG_DEBUG_LEVEL',
+                        self.config_table.c.Name=='ZM_LOG_DEBUG_FILE',
+                        self.config_table.c.Name=='ZM_LOG_DEBUG_TARGET',
+                        self.config_table.c.Name=='ZM_SERVER_ID',
+                        ))
+            resultproxy = self.conn.execute(select_st)
+            db_vals = {row[0]:row[1] for row in resultproxy}
 
-        self.config['log_level_syslog'] = int(db_vals['ZM_LOG_LEVEL_SYSLOG']) 
-        self.config['log_level_file'] = int(db_vals['ZM_LOG_LEVEL_FILE'])
-        self.config['log_level_db'] = int(db_vals['ZM_LOG_LEVEL_DATABASE'])
-        self.config['log_debug'] = int(db_vals['ZM_LOG_DEBUG'])
-        self.config['log_level_debug'] = int(db_vals['ZM_LOG_DEBUG_LEVEL'])
-        self.config['log_debug_file'] = db_vals['ZM_LOG_DEBUG_FILE']
-        self.config['log_debug_target'] = db_vals['ZM_LOG_DEBUG_TARGET']
-        self.config['server_id'] = db_vals.get('ZM_SERVER_ID',0)
+            self.config['log_level_syslog'] = int(db_vals['ZM_LOG_LEVEL_SYSLOG']) 
+            self.config['log_level_file'] = int(db_vals['ZM_LOG_LEVEL_FILE'])
+            self.config['log_level_db'] = int(db_vals['ZM_LOG_LEVEL_DATABASE'])
+            self.config['log_debug'] = int(db_vals['ZM_LOG_DEBUG'])
+            self.config['log_level_debug'] = int(db_vals['ZM_LOG_DEBUG_LEVEL'])
+            self.config['log_debug_file'] = db_vals['ZM_LOG_DEBUG_FILE']
+            self.config['log_debug_target'] = db_vals['ZM_LOG_DEBUG_TARGET']
+            self.config['server_id'] = db_vals.get('ZM_SERVER_ID',0)
         # Round 2 of overrides, after DB data is read
         # Override with locals if present
         for key in self.config:
@@ -177,7 +181,7 @@ class ZMLogger:
             syslog.syslog (syslog.LOG_INFO, log_string)
         except SQLAlchemyError as e:
             self.connected = False
-            syslog.syslog (syslog.LOG_ERR, self.format_string("Error connecting to DB:" + str(e)))
+            syslog.syslog (syslog.LOG_ERR, self.format_string("Turning off DB logging due to error received:" + str(e)))
             return False
         else:
             self.connected = True
@@ -185,8 +189,8 @@ class ZMLogger:
             
 
     def close(self):
-        self.conn.close()
-        self.engine.dispose()
+        if self.conn: self.conn.close()
+        if self.engine: self.engine.dispose()
         syslog.closelog()
         if (self.log_fhandle): self.log_fhandle.close()
 

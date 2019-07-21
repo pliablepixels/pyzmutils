@@ -70,13 +70,15 @@ you'd do:
 
 ```python
 
+import pyzmutils.logger as zmlog
+
 overrides = {
-    'log_level_db': -5, # -5 is 'OFF' in ZM
-    'log_level_syslog': 1, # 1 is 'DBG' in ZM
-    'log_level_debug': 3,
-    'log_debug_target': 'myapp'
-    }
-logger = ZMLogger(name='myapp', overrides=overrides)
+  'log_level_db': -5, # -5 is 'OFF' in ZM
+  'log_level_syslog': 1, # 1 is 'DBG' in ZM
+  'log_level_debug': 3,
+  'log_debug_target': 'myapp'
+}
+logger = zmlog.ZMLogger(name='myapp', overrides=overrides)
 print (logger.get_config())
 logger.Warning('This is a Warning')
 logger.Info('This is an Info')
