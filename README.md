@@ -1,3 +1,6 @@
+
+## This module is deprecated in favor of <a href='https://github.com/pliablepixels/pyzm'>pyzm</a>
+
 ### What
 
 Python utilities for ZoneMinder projects
